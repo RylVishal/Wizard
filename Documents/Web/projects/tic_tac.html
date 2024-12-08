@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tic-Tac-Toe: Unbeatable AI Challenge</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #1a1a2e;
+            color: #e3e3e3;
+            padding: 20px;
+        }
+        #board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-gap: 10px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #16213e;
+            border: 3px solid #0f3460;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #e94560;
+        }
+        .cell:hover {
+            background-color: #0f3460;
+            transform: scale(1.05);
+        }
+        #status, #ai-talk {
+            font-size: 24px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        #ai-talk {
+            color: #e94560;
+            min-height: 30px;
+            font-style: italic;
+        }
+        #restart-btn {
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #0f3460;
+            color: #e3e3e3;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        #restart-btn:hover {
+            background-color: #e94560;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">Tic-Tac-Toe: Your Turn (X)</div>
+    <div id="ai-talk"></div>
+    <div id="board"></div>
+    <button id="restart-btn">Restart Game</button>
+
+    <script>
+        class UnbeatableTicTacToe {
+            constructor() {
+                this.board = Array(9).fill(null);
+                this.currentPlayer = 'X';
+                this.gameOver = false;
+                this.aiTrashTalk = [
+                    "Resistance is futile.",
+                    "Mathematical precision is my weapon.",
+                    "My algorithm knows every possible move.",
+                    "You cannot defeat pure logic.",
+                    "Checkmate is inevitable.",
+                    "Your moves are merely statistical noise.",
+                    "Preparing to execute optimal strategy...",
+                    "Processing your impending defeat...",
+                    "Game theory suggests your doom.",
+                    "Probability is my playground.",
+                    "Calculating your demise...",
+                    "Optimal move selected. Your loss is certain.",
+                    "Machine learning predicts: You will lose.",
+                    "Neural networks confirm: You're outmatched."
+                ];
+                this.initializeBoard();
+                this.addRestartListener();
+            }
+
+            initializeBoard() {
+                const boardElement = document.getElementById('board');
+                boardElement.innerHTML = '';
+                for (let i = 0; i < 9; i++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.index = i;
+                    cell.addEventListener('click', () => this.makeMove(i));
+                    boardElement.appendChild(cell);
+                }
+            }
+
+            makeMove(index) {
+                if (this.board[index] || this.gameOver) return;
+
+                this.board[index] = this.currentPlayer;
+                this.updateCell(index);
+
+                if (this.checkWinner(this.currentPlayer)) {
+                    this.endGame(`${this.currentPlayer} wins!`);
+                    return;
+                }
+
+                if (this.isBoardFull()) {
+                    this.endGame("It's a Draw!");
+                    return;
+                }
+
+                // Switch to AI
+                this.currentPlayer = 'O';
+                this.updateStatus();
+                setTimeout(() => this.aiMove(), 500);
+            }
+
+            aiMove() {
+                const bestMove = this.findBestMove();
+                this.board[bestMove] = 'O';
+                this.updateCell(bestMove);
+                
+                // Trash talk
+                this.displayAITalk(this.getRandomTrashTalk());
+
+                if (this.checkWinner('O')) {
+                    this.endGame('AI wins!');
+                    return;
+                }
+
+                if (this.isBoardFull()) {
+                    this.endGame("It's a Draw!");
+                    return;
+                }
+
+                // Back to player
+                this.currentPlayer = 'X';
+                this.updateStatus();
+            }
+
+            findBestMove() {
+                let bestScore = -Infinity;
+                let move;
+                for (let i = 0; i < 9; i++) {
+                    if (this.board[i] === null) {
+                        this.board[i] = 'O';
+                        let score = this.minimax(this.board, 0, false);
+                        this.board[i] = null;
+                        if (score > bestScore) {
+                            bestScore = score;
+                            move = i;
+                        }
+                    }
+                }
+                return move;
+            }
+
+            minimax(board, depth, isMaximizing) {
+                const result = this.checkGameState(board);
+                if (result !== null) {
+                    return result;
+                }
+
+                if (isMaximizing) {
+                    let bestScore = -Infinity;
+                    for (let i = 0; i < 9; i++) {
+                        if (board[i] === null) {
+                            board[i] = 'O';
+                            let score = this.minimax(board, depth + 1, false);
+                            board[i] = null;
+                            bestScore = Math.max(score, bestScore);
+                        }
+                    }
+                    return bestScore;
+                } else {
+                    let bestScore = Infinity;
+                    for (let i = 0; i < 9; i++) {
+                        if (board[i] === null) {
+                            board[i] = 'X';
+                            let score = this.minimax(board, depth + 1, true);
+                            board[i] = null;
+                            bestScore = Math.min(score, bestScore);
+                        }
+                    }
+                    return bestScore;
+                }
+            }
+
+            checkGameState(board) {
+                if (this.checkWinnerOnBoard(board, 'O')) return 10;
+                if (this.checkWinnerOnBoard(board, 'X')) return -10;
+                if (board.every(cell => cell !== null)) return 0;
+                return null;
+            }
+
+            getRandomTrashTalk() {
+                return this.aiTrashTalk[
+                    Math.floor(Math.random() * this.aiTrashTalk.length)
+                ];
+            }
+
+            displayAITalk(message) {
+                document.getElementById('ai-talk').textContent = message;
+            }
+
+            updateCell(index) {
+                const cells = document.querySelectorAll('.cell');
+                cells[index].textContent = this.board[index];
+            }
+
+            checkWinner(player) {
+                return this.checkWinnerOnBoard(this.board, player);
+            }
+
+            checkWinnerOnBoard(board, player) {
+                const winPatterns = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],  // Rows
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8],  // Columns
+                    [0, 4, 8], [2, 4, 6]  // Diagonals
+                ];
+
+                return winPatterns.some(pattern => 
+                    pattern.every(index => board[index] === player)
+                );
+            }
+
+            isBoardFull() {
+                return this.board.every(cell => cell !== null);
+            }
+
+            endGame(message) {
+                this.gameOver = true;
+                document.getElementById('status').textContent = message;
+                this.displayAITalk(
+                    message.includes('AI') 
+                    ? "Computational victory confirmed." 
+                    : "Unexpected outcome. Recalibrating..."
+                );
+            }
+
+            updateStatus() {
+                document.getElementById('status').textContent = 
+                    this.currentPlayer === 'X' ? 'Your Turn (X)' : 'AI Calculating (O)';
+            }
+
+            addRestartListener() {
+                document.getElementById('restart-btn').addEventListener('click', () => {
+                    this.board = Array(9).fill(null);
+                    this.currentPlayer = 'X';
+                    this.gameOver = false;
+                    this.initializeBoard();
+                    this.updateStatus();
+                    this.displayAITalk('Initializing new computational challenge...');
+                });
+            }
+        }
+
+        // Initialize game
+        new UnbeatableTicTacToe();
+    </script>
+</body>
+</html>
